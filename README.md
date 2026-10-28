@@ -149,6 +149,14 @@ The protocol implementation uses the 16-byte, big-endian header shown in the sup
 
 TCP responses are buffered until the complete payload length declared by the header has arrived. This is required for large map files that span multiple TCP reads.
 
+## Fleet rollout agent
+
+The desktop app and the new headless `amr-map-agent` share one `MapDeployer`.
+The agent claims map rollout jobs from Fleet, verifies the downloaded bytes,
+deploys to idle robots, and durably reports the results. Start with one robot.
+See [docs/AGENT.md](docs/AGENT.md) for configuration, Task Scheduler setup,
+recovery, API compatibility, automated checks and pilot acceptance.
+
 ## Build on Ubuntu
 
 Ubuntu 22.04 or later:

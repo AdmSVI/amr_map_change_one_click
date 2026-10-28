@@ -1,0 +1,13 @@
+[fleet]
+url=https://fleet.example.com
+; Prefer AMR_MAP_AGENT_TOKEN in the service account environment.
+token=
+; Enable only for a trusted intranet intentionally served without TLS.
+allow_http=false
+
+[agent]
+poll_seconds=10
+; Pilot with one robot; maximum is three.
+concurrency=1
+; Relative to this INI. Keep this directory writable and persistent.
+state_file=agent-state.json

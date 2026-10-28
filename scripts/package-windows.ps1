@@ -56,7 +56,9 @@ foreach ($requiredFile in @($qtDeploy, $VCRedistPath, $InnoSetupPath)) {
 
 cmake -S $projectDir -B $buildDir -G "Visual Studio 17 2022" -A x64 `
     "-DCMAKE_PREFIX_PATH=$QtRoot"
+if ($LASTEXITCODE -ne 0) { throw "CMake configuration failed with exit code $LASTEXITCODE" }
 cmake --build $buildDir --config Release --parallel
+if ($LASTEXITCODE -ne 0) { throw "CMake build failed with exit code $LASTEXITCODE" }
 
 if (-not (Test-Path -LiteralPath $appExe -PathType Leaf)) {
     throw "Release executable was not created: $appExe"
@@ -73,8 +75,14 @@ if (Test-Path -LiteralPath $resolvedStage) {
 New-Item -ItemType Directory -Force -Path $resolvedStage | Out-Null
 
 Copy-Item -LiteralPath $appExe -Destination $resolvedStage
+$agentExe = Join-Path $buildDir "Release\amr-map-agent.exe"
+Copy-Item -LiteralPath $agentExe -Destination $resolvedStage
+Copy-Item -LiteralPath (Join-Path $projectDir "agent.ini.example") -Destination $resolvedStage
 & $qtDeploy --release --no-translations --no-compiler-runtime --dir $resolvedStage $appExe
 if ($LASTEXITCODE -ne 0) { throw "windeployqt failed with exit code $LASTEXITCODE" }
+
+& $qtDeploy --release --no-translations --no-compiler-runtime --dir $resolvedStage $agentExe
+if ($LASTEXITCODE -ne 0) { throw "Agent windeployqt failed with exit code $LASTEXITCODE" }
 
 $portablePath = Join-Path $resolvedOutput "AMRMapManager-$Version-win64-portable.zip"
 if (Test-Path -LiteralPath $portablePath) { Remove-Item -LiteralPath $portablePath -Force }

@@ -12,3 +12,8 @@
 /smap-master/
 /dist/
 *.deb
+
+# Private agent configuration and durable local state
+/agent.ini
+/agent-state.json
+/agent-state.json.lock

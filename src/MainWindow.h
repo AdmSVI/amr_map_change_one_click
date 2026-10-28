@@ -82,14 +82,9 @@ private:
     QWidget *mapDialogParent();
     void updateMapSummary();
     void chooseAndUpload(bool switchAfterUpload);
-    void startBatch(const QByteArray &mapBytes, const QString &mapName,
-                    bool switchAfterUpload);
+    void startBatch(const QByteArray &mapBytes, bool switchAfterUpload);
     void launchNext();
     void runRobotOperation(int row);
-    void uploadRobot(int row);
-    void verifyUpload(int row, int attempt = 0);
-    void switchRobot(int row);
-    void verifyCurrentMap(int row);
     void finishRobot(int row, const QString &result, bool success);
     void query(int row, quint16 port, quint16 command, const QByteArray &payload,
                std::function<void(RequestResult)> callback, int timeoutMs = 10000);
@@ -137,9 +132,7 @@ private:
     int m_completedOperations = 0;
     int m_totalOperations = 0;
     QByteArray m_mapBytes;
-    QString m_mapName;
     QString m_mapMd5;
-    QHash<int, QString> m_remoteMapNames;
     int m_livePositionRow = -1;
     int m_livePositionSession = 0;
     int m_livePositionFailures = 0;

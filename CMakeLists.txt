@@ -8,18 +8,54 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
+if(MSVC)
+    add_compile_options(/utf-8)
+endif()
 
-find_package(Qt6 6.2 REQUIRED COMPONENTS Core Widgets Network Concurrent)
+option(BUILD_MAP_MANAGER "Build the desktop map manager" ON)
+find_package(Qt6 6.2 REQUIRED COMPONENTS Core Network)
+
+add_library(amr-map-core STATIC
+    src/core/Robot.h
+    src/core/MapDeployer.h
+    src/core/MapDeployer.cpp
+    src/protocol/RbkProtocol.h
+    src/protocol/RbkProtocol.cpp
+    src/network/RequestJob.h
+    src/network/RequestJob.cpp
+)
+target_include_directories(amr-map-core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_link_libraries(amr-map-core PUBLIC Qt6::Core Qt6::Network)
+
+qt_add_executable(amr-map-agent
+    src/agent/main.cpp
+    src/agent/FleetClient.h
+    src/agent/FleetClient.cpp
+    src/agent/MapAgent.h
+    src/agent/MapAgent.cpp
+)
+target_link_libraries(amr-map-agent PRIVATE amr-map-core)
+install(TARGETS amr-map-agent RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+include(CTest)
+if(BUILD_TESTING)
+    qt_add_executable(map-deployer-test tests/MapDeployerTest.cpp)
+    target_link_libraries(map-deployer-test PRIVATE amr-map-core)
+    add_test(NAME map-deployer COMMAND map-deployer-test)
+    find_package(Python3 COMPONENTS Interpreter)
+    if(Python3_Interpreter_FOUND)
+        add_test(NAME map-agent COMMAND ${Python3_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/test_agent.py $<TARGET_FILE:amr-map-agent>)
+    endif()
+endif()
+
+if(BUILD_MAP_MANAGER)
+find_package(Qt6 6.2 REQUIRED COMPONENTS Widgets Concurrent)
 
 qt_add_executable(amr-map-manager
     src/main.cpp
     src/MainWindow.h
     src/MainWindow.cpp
-    src/core/Robot.h
-    src/protocol/RbkProtocol.h
-    src/protocol/RbkProtocol.cpp
-    src/network/RequestJob.h
-    src/network/RequestJob.cpp
     src/map/MapView.h
     src/map/MapView.cpp
     src/map/LocalizationHeatmap.h
@@ -34,6 +70,7 @@ target_include_directories(amr-map-manager PRIVATE
 )
 
 target_link_libraries(amr-map-manager PRIVATE
+    amr-map-core
     Qt6::Core
     Qt6::Widgets
     Qt6::Network
@@ -53,7 +90,9 @@ install(TARGETS amr-map-manager
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-if(UNIX AND NOT APPLE)
+endif() # BUILD_MAP_MANAGER
+
+if(UNIX AND NOT APPLE AND BUILD_MAP_MANAGER)
     install(FILES packaging/linux/amr-map-manager.desktop
             DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
     install(FILES logo/svi_logo.svg
